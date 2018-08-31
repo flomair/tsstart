@@ -16,63 +16,72 @@ import { makeData, Logo, Tips } from "./utils";
 import loaded from './data'
 
 
-
+const makeHeader = (name: string , index: number, setSortable: Function) => {
+  if (!name.length)
+    return '';
+  return (<div
+    style={{ display: 'flex' }}>
+    {name}
+    <FilterList
+      style={{ paddingLeft: 3, marginTop: -4 }}
+      onClick={(e: any) => {
+        e.stopPropagation();
+        setSortable(index)
+      }}
+    >
+    </FilterList>
+  </div>)
+}
 
 
 const conf = {
-  
+
   columns: [
     {
-      Header:  (row: any,d:any,index:number) => <div>Hello<FilterList style={{paddingLeft:3, paddingBottom:2}} onClick={(e:any) => {
-        
-        e.stopPropagation();
-        conf.columns[0].filterable != conf.columns[0].filterable
-        console.log(row)
-      }}></FilterList></div>,
-      
+      name: 'Timestamp',
       accessor: "time",
       filterable: false,
       Cell: (row: any) => moment(row.value).format("DD/MM/YY HH:mm:ss")
     },
     {
-      Header: console.log ,//"Duration",
+      name: "Duration",
       accessor: "duration",
       filterable: false,
       //Cell: (row: any) => <div style={{ color: 'red' }}>Timestamp</div>
     },
     {
-      Header: "",
+     
       accessor: "id",
       filterable: false,
       width: 30,
-     // Cell: (row: any) => <IconChartSharp onClick={() => console.log(row.value)}></IconChartSharp>
+      Cell: (row: any) => <IconChartSharp onClick={() => console.log(row.value)}></IconChartSharp>
     }
     ,
     {
-      Header: "Location",
+      name: "Location",
       accessor: "location",
       filterable: false,
     }
     ,
     {
-      Header: "Message",
+      name: "Message",
       accessor: "message",
       filterable: false,
     }
     ,
     {
-      Header: "Status",
+      name: "Status",
       accessor: "status",
       filterable: false,
     },
   ],
   showPaginationTop: true,
   showPaginationBottom: false,
-  style: { height:'500px' },
+  style: { height: '500px' },
   defaultPageSize: 10,
   className: "-highlight",
-  resizable:false,
-  filterable : false,
+  resizable: false,
+  filterable: false,
   loadingText: <Logo />
 }
 
@@ -87,10 +96,26 @@ class Table extends React.Component<any, any, any> {
     //console.log(props.classes.ReactTable)
     this.state = {
       data: loaded,
-      conf: { ...conf, ...this.props.conf }
+      conf: this.getConf(conf)
     };
+    this.toggleColumnFilterable = this.toggleColumnFilterable.bind(this);
+    this.getConf = this.getConf.bind(this);
   }
 
+  getConf(conf:any) {
+   return {
+      ...conf, columns: conf.columns.map((col :{name:string}, index:number) => {
+        return { ...col, Header: makeHeader(col.name ||'', index, this.toggleColumnFilterable) }
+      })
+    }
+  }
+
+  toggleColumnFilterable = (index: number) =>  {
+    const conf = {...this.state.conf}
+    conf.columns[index].filterable = !conf.columns[index].filterable;
+    conf.filterable = conf.columns.some((column: any) => column.filterable)
+    this.setState({ conf })
+  }
 
 
   componentDidMount() {
@@ -118,16 +143,10 @@ class Table extends React.Component<any, any, any> {
   render() {
     const propsIn = { ...conf, ...this.state.conf }
     const data = this.state.data.map((m: any) => m);
-    return (
-      <SizeMe>
-       {({ size }:{size:{height:number}}) => {
-         console.log(size)
-       return <ReactTable 
-          //style ={{flexGrow:1}}
-          data={data}
-          {...propsIn}
-        />}}
-      </SizeMe>
+    return (<ReactTable
+      data={data}
+      {...propsIn}
+    />
     );
   }
 }
@@ -136,7 +155,7 @@ const styles = ({ palette, spacing }: Theme) => {
   //console.log(palette)
   return createStyles({
     root: {
-      fontFamily:'Roboto',
+      fontFamily: 'Roboto',
       fontSize: '0.75em',
       height: '500px'
     },
